@@ -26,4 +26,8 @@ tools/xngen src/f32-ibilinear-chw/neon.c.in -D PIXEL_TILE=16 -D FMA=1 -o src/f32
 tools/xngen src/f32-ibilinear-chw/sse.c.in -D PIXEL_TILE=4 -o src/f32-ibilinear-chw/gen/f32-ibilinear-chw-sse-p4.c &
 tools/xngen src/f32-ibilinear-chw/sse.c.in -D PIXEL_TILE=8 -o src/f32-ibilinear-chw/gen/f32-ibilinear-chw-sse-p8.c &
 
+################################## RISC-V RVV #################################
+tools/xngen src/f32-ibilinear-chw/rvv.c.in -D LMUL=1 -o src/f32-ibilinear-chw/gen/f32-ibilinear-chw-rvv-u1v.c &
+tools/xngen src/f32-ibilinear-chw/rvv.c.in -D LMUL=2 -o src/f32-ibilinear-chw/gen/f32-ibilinear-chw-rvv-u2v.c &
+
 wait
