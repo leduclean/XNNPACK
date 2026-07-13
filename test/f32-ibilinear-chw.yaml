@@ -20,3 +20,6 @@
 # x86 SSE
 - name: xnn_f32_ibilinear_chw_ukernel__sse_p4
 - name: xnn_f32_ibilinear_chw_ukernel__sse_p8
+# RISC-V Vector
+- name: xnn_f32_ibilinear_chw_ukernel__rvv_u1v
+- name: xnn_f32_ibilinear_chw_ukernel__rvv_u2v
