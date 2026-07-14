@@ -1303,3 +1303,141 @@ TEST(F32_IBILINEAR_CHW__SCALAR_P4, input_stride) {
     }
   }
 #endif  // XNN_ENABLE_RISCV_VECTOR && XNN_ARCH_RISCV
+
+
+#if XNN_ENABLE_RISCV_VECTOR && XNN_ARCH_RISCV
+  TEST(F32_IBILINEAR_CHW__RVV_U2V_INV, pixels_eq_1) {
+    TEST_REQUIRES_ARCH_FLAGS(xnn_arch_riscv_vector);
+    IBilinearMicrokernelTester()
+      .pixels(1)
+      .channels(1)
+      .TestCHW(xnn_f32_ibilinear_chw_ukernel__rvv_u2v_inv);
+  }
+
+  TEST(F32_IBILINEAR_CHW__RVV_U2V_INV, pixels_gt_1) {
+    TEST_REQUIRES_ARCH_FLAGS(xnn_arch_riscv_vector);
+    for (size_t pixels = 2; pixels < 10; pixels++) {
+      IBilinearMicrokernelTester()
+        .pixels(pixels)
+        .channels(1)
+        .TestCHW(xnn_f32_ibilinear_chw_ukernel__rvv_u2v_inv);
+    }
+  }
+
+  TEST(F32_IBILINEAR_CHW__RVV_U2V_INV, channels_eq_1) {
+    TEST_REQUIRES_ARCH_FLAGS(xnn_arch_riscv_vector);
+    for (size_t pixels = 1; pixels <= 5; pixels += 1) {
+      IBilinearMicrokernelTester()
+        .pixels(pixels)
+        .channels(1)
+        .TestCHW(xnn_f32_ibilinear_chw_ukernel__rvv_u2v_inv);
+    }
+  }
+
+  TEST(F32_IBILINEAR_CHW__RVV_U2V_INV, channels_gt_1) {
+    TEST_REQUIRES_ARCH_FLAGS(xnn_arch_riscv_vector);
+    for (size_t channels = 2; channels < 3; channels++) {
+      for (size_t pixels = 1; pixels <= 5; pixels += 1) {
+        IBilinearMicrokernelTester()
+          .pixels(pixels)
+          .channels(channels)
+          .TestCHW(xnn_f32_ibilinear_chw_ukernel__rvv_u2v_inv);
+      }
+    }
+  }
+
+  TEST(F32_IBILINEAR_CHW__RVV_U2V_INV, input_offset) {
+    TEST_REQUIRES_ARCH_FLAGS(xnn_arch_riscv_vector);
+    for (size_t pixels = 1; pixels < 5; pixels += 1) {
+      for (size_t channels = 1; channels <= 5; channels += 1) {
+        IBilinearMicrokernelTester()
+          .pixels(pixels)
+          .channels(channels)
+          .input_offset(7)
+          .TestCHW(xnn_f32_ibilinear_chw_ukernel__rvv_u2v_inv);
+      }
+    }
+  }
+
+  TEST(F32_IBILINEAR_CHW__RVV_U2V_INV, input_stride) {
+    TEST_REQUIRES_ARCH_FLAGS(xnn_arch_riscv_vector);
+    for (size_t pixels = 1; pixels < 5; pixels += 1) {
+      for (size_t channels = 1; channels <= 5; channels += 1) {
+        IBilinearMicrokernelTester()
+          .pixels(pixels)
+          .channels(channels)
+          .input_stride(23)
+          .TestCHW(xnn_f32_ibilinear_chw_ukernel__rvv_u2v_inv);
+      }
+    }
+  }
+#endif  // XNN_ENABLE_RISCV_VECTOR && XNN_ARCH_RISCV
+
+
+#if XNN_ENABLE_RISCV_VECTOR && XNN_ARCH_RISCV
+  TEST(F32_IBILINEAR_CHW__RVV_U2V_OFFC, pixels_eq_1) {
+    TEST_REQUIRES_ARCH_FLAGS(xnn_arch_riscv_vector);
+    IBilinearMicrokernelTester()
+      .pixels(1)
+      .channels(1)
+      .TestCHW(xnn_f32_ibilinear_chw_ukernel__rvv_u2v_offc);
+  }
+
+  TEST(F32_IBILINEAR_CHW__RVV_U2V_OFFC, pixels_gt_1) {
+    TEST_REQUIRES_ARCH_FLAGS(xnn_arch_riscv_vector);
+    for (size_t pixels = 2; pixels < 10; pixels++) {
+      IBilinearMicrokernelTester()
+        .pixels(pixels)
+        .channels(1)
+        .TestCHW(xnn_f32_ibilinear_chw_ukernel__rvv_u2v_offc);
+    }
+  }
+
+  TEST(F32_IBILINEAR_CHW__RVV_U2V_OFFC, channels_eq_1) {
+    TEST_REQUIRES_ARCH_FLAGS(xnn_arch_riscv_vector);
+    for (size_t pixels = 1; pixels <= 5; pixels += 1) {
+      IBilinearMicrokernelTester()
+        .pixels(pixels)
+        .channels(1)
+        .TestCHW(xnn_f32_ibilinear_chw_ukernel__rvv_u2v_offc);
+    }
+  }
+
+  TEST(F32_IBILINEAR_CHW__RVV_U2V_OFFC, channels_gt_1) {
+    TEST_REQUIRES_ARCH_FLAGS(xnn_arch_riscv_vector);
+    for (size_t channels = 2; channels < 3; channels++) {
+      for (size_t pixels = 1; pixels <= 5; pixels += 1) {
+        IBilinearMicrokernelTester()
+          .pixels(pixels)
+          .channels(channels)
+          .TestCHW(xnn_f32_ibilinear_chw_ukernel__rvv_u2v_offc);
+      }
+    }
+  }
+
+  TEST(F32_IBILINEAR_CHW__RVV_U2V_OFFC, input_offset) {
+    TEST_REQUIRES_ARCH_FLAGS(xnn_arch_riscv_vector);
+    for (size_t pixels = 1; pixels < 5; pixels += 1) {
+      for (size_t channels = 1; channels <= 5; channels += 1) {
+        IBilinearMicrokernelTester()
+          .pixels(pixels)
+          .channels(channels)
+          .input_offset(7)
+          .TestCHW(xnn_f32_ibilinear_chw_ukernel__rvv_u2v_offc);
+      }
+    }
+  }
+
+  TEST(F32_IBILINEAR_CHW__RVV_U2V_OFFC, input_stride) {
+    TEST_REQUIRES_ARCH_FLAGS(xnn_arch_riscv_vector);
+    for (size_t pixels = 1; pixels < 5; pixels += 1) {
+      for (size_t channels = 1; channels <= 5; channels += 1) {
+        IBilinearMicrokernelTester()
+          .pixels(pixels)
+          .channels(channels)
+          .input_stride(23)
+          .TestCHW(xnn_f32_ibilinear_chw_ukernel__rvv_u2v_offc);
+      }
+    }
+  }
+#endif  // XNN_ENABLE_RISCV_VECTOR && XNN_ARCH_RISCV

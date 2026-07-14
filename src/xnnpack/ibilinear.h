@@ -161,6 +161,15 @@ DECLARE_F32_IBILINEAR_CHW_UKERNEL_FUNCTION(
 DECLARE_F32_IBILINEAR_CHW_UKERNEL_FUNCTION(
     xnn_f32_ibilinear_chw_ukernel__rvv_u2v)
 
+DECLARE_F32_IBILINEAR_CHW_UKERNEL_FUNCTION(
+    xnn_f32_ibilinear_chw_ukernel__rvv_u2v_inv)
+
+DECLARE_F32_IBILINEAR_CHW_UKERNEL_FUNCTION(
+    xnn_f32_ibilinear_chw_ukernel__rvv_stride_u2v)
+
+DECLARE_F32_IBILINEAR_CHW_UKERNEL_FUNCTION(
+    xnn_f32_ibilinear_chw_ukernel__rvv_u2v_off)
+
 #define DECLARE_F16_IBILINEAR_CHW_UKERNEL_FUNCTION(fn_name)                  \
   XNN_INTERNAL void fn_name(size_t output_pixels, size_t channels,           \
                             const xnn_float16** input, size_t input_offset,  \

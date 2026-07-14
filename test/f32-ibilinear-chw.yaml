@@ -23,3 +23,6 @@
 # RISC-V Vector
 - name: xnn_f32_ibilinear_chw_ukernel__rvv_u1v
 - name: xnn_f32_ibilinear_chw_ukernel__rvv_u2v
+- name: xnn_f32_ibilinear_chw_ukernel__rvv_u2v_inv
+- name: xnn_f32_ibilinear_chw_ukernel__rvv_u2v_offc
+
