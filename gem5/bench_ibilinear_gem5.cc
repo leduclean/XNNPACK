@@ -26,13 +26,16 @@ void xnn_f32_ibilinear_chw_ukernel__rvv_u2v_off(size_t, size_t, const float**,
                                                 size_t, const float*, float*,
                                                 size_t);
 
-void xnn_f32_ibilinear_chw_ukernel__rvv_u2v_offc(size_t, size_t, const float**,
-                                                 size_t, const float*, float*,
-                                                 size_t);
-
 void xnn_f32_ibilinear_chw_ukernel__rvv_u2v_inv(size_t, size_t, const float**,
                                                 size_t, const float*, float*,
                                                 size_t);
+
+void xnn_f32_ibilinear_chw_ukernel__rvv_u1v_pack(size_t, size_t, const float**,
+                                                 size_t, const float*, float*,
+                                                 size_t);
+void xnn_f32_ibilinear_chw_ukernel__rvv_u2v_pack(size_t, size_t, const float**,
+                                                 size_t, const float*, float*,
+                                                 size_t);
 }
 
 int main(int argc, char** argv) {
@@ -43,7 +46,8 @@ int main(int argc, char** argv) {
       : k == "stride"   ? xnn_f32_ibilinear_chw_ukernel__rvv_stride_u2v
       : k == "u2v_off"  ? xnn_f32_ibilinear_chw_ukernel__rvv_u2v_off
       : k == "u2v_inv"  ? xnn_f32_ibilinear_chw_ukernel__rvv_u2v_inv
-      : k == "u2v_offc" ? xnn_f32_ibilinear_chw_ukernel__rvv_u2v_offc
+      : k == "u1v_pack" ? xnn_f32_ibilinear_chw_ukernel__rvv_u1v_pack
+      : k == "u2v_pack" ? xnn_f32_ibilinear_chw_ukernel__rvv_u2v_pack
                         : xnn_f32_ibilinear_chw_ukernel__rvv_u2v;
 
   const size_t channels = 32, output_pixels = 32 * 32;

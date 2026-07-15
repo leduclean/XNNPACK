@@ -12,7 +12,7 @@
 
 
 
-void xnn_f32_ibilinear_chw_ukernel__rvv_u2v(
+void xnn_f32_ibilinear_chw_ukernel__rvv_u2v_pack(
                 size_t output_pixels,
                 size_t channels,
                 const float** restrict input,
@@ -42,25 +42,26 @@ void xnn_f32_ibilinear_chw_ukernel__rvv_u2v(
       vuint64m4_t vbi_addr =
           __riscv_vget_v_u64m4x2_u64m4(vptrs, 1);
 
-      vfloat32m2x2_t wptrs = __riscv_vlseg2e32_v_f32m2x2(w, vl);
-      vfloat32m2_t vwh =
-          __riscv_vget_v_f32m2x2_f32m2(wptrs, 0);
-      vfloat32m2_t vwv =
-          __riscv_vget_v_f32m2x2_f32m2(wptrs, 1);
+      // Each (alphah, alphav) pair occupies 8 contiguous bytes, i.e. one u64
+      // lane: a unit-stride vle64 replaces the element-wise vlseg2e32, and
+      // the halves are split by two narrowing shifts.
+      vuint64m4_t vwpair =
+          __riscv_vle64_v_u64m4((const uint64_t*)w, vl);
+      vfloat32m2_t vwh = __riscv_vreinterpret_v_u32m2_f32m2(__riscv_vnsrl_wx_u32m2(vwpair, 0, vl));
+      vfloat32m2_t vwv = __riscv_vreinterpret_v_u32m2_f32m2(__riscv_vnsrl_wx_u32m2(vwpair, 32, vl));
 
-      vfloat32m2x2_t vti = __riscv_vluxseg2ei64_v_f32m2x2(
-          (const float*)input_offset, vti_addr, vl);
-      vfloat32m2_t vtl =
-          __riscv_vget_v_f32m2x2_f32m2(vti, 0);
-      vfloat32m2_t vtr =
-          __riscv_vget_v_f32m2x2_f32m2(vti, 1);
+      // top_left and top_right are adjacent in memory, so a single 64-bit
+      // gathered lane carries both -- the RVV analogue of NEON's vld1_f32().
+      // Halves the gathered element count versus vluxseg2ei64.
+      vuint64m4_t vtpair = __riscv_vluxei64_v_u64m4(
+          (const uint64_t*)input_offset, vti_addr, vl);
+      vfloat32m2_t vtl = __riscv_vreinterpret_v_u32m2_f32m2(__riscv_vnsrl_wx_u32m2(vtpair, 0, vl));
+      vfloat32m2_t vtr = __riscv_vreinterpret_v_u32m2_f32m2(__riscv_vnsrl_wx_u32m2(vtpair, 32, vl));
 
-      vfloat32m2x2_t vbi = __riscv_vluxseg2ei64_v_f32m2x2(
-          (const float*)input_offset, vbi_addr, vl);
-      vfloat32m2_t vbl =
-          __riscv_vget_v_f32m2x2_f32m2(vbi, 0);
-      vfloat32m2_t vbr =
-          __riscv_vget_v_f32m2x2_f32m2(vbi, 1);
+      vuint64m4_t vbpair = __riscv_vluxei64_v_u64m4(
+          (const uint64_t*)input_offset, vbi_addr, vl);
+      vfloat32m2_t vbl = __riscv_vreinterpret_v_u32m2_f32m2(__riscv_vnsrl_wx_u32m2(vbpair, 0, vl));
+      vfloat32m2_t vbr = __riscv_vreinterpret_v_u32m2_f32m2(__riscv_vnsrl_wx_u32m2(vbpair, 32, vl));
 
       vfloat32m2_t vt = __riscv_vfmacc_vv_f32m2(
           vtl, __riscv_vfsub_vv_f32m2(vtr, vtl, vl), vwh, vl);

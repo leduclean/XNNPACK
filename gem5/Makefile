@@ -1,4 +1,4 @@
-KERNELS := scalar-p2 rvv-u1v rvv-u2v rvv-u2v-off rvv-u2v-offc rvv-stride-u2v rvv-u2v-inv
+KERNELS := scalar-p2 rvv-u1v rvv-u2v rvv-u1v-pack rvv-u2v-pack rvv-u2v-off rvv-stride-u2v rvv-u2v-inv
 KDIR    := ../src/f32-ibilinear-chw/gen
 OBJS    := $(patsubst %,%.o,$(KERNELS))
 CC      := riscv64-linux-gnu-gcc-14

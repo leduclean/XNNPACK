@@ -6,8 +6,14 @@
 #include "src/xnnpack/ibilinear.h"
 
 $assert LMUL in[1, 2]
+$PTR_LMUL = LMUL * 2
+$NAME = "rvv_u%dv%s" % (LMUL, "_pack" if PACK else "")
 
-void xnn_f32_ibilinear_chw_ukernel__rvv_u${LMUL}v(
+$# Split a u64m{PTR_LMUL} vector of packed (lo32, hi32) pairs into f32m{LMUL}.
+$def UNPACK(src, half):
+$  return "__riscv_vreinterpret_v_u32m%d_f32m%d(__riscv_vnsrl_wx_u32m%d(%s, %d, vl))" % (LMUL, LMUL, LMUL, src, 32 if half else 0)
+
+void xnn_f32_ibilinear_chw_ukernel__${NAME}(
                 size_t output_pixels,
                 size_t channels,
                 const float** restrict input,
@@ -29,33 +35,55 @@ void xnn_f32_ibilinear_chw_ukernel__rvv_u${LMUL}v(
     for (size_t vl; p > 0; p -= vl, output += vl, i += 2 * vl, w += 2 * vl) {
       vl = __riscv_vsetvl_e32m${LMUL}(p);
 
-      vuint64m${LMUL* 2}x2_t vptrs =
-          __riscv_vlseg2e64_v_u64m${LMUL * 2}x2((const uint64_t*)i, vl);
+      vuint64m${PTR_LMUL}x2_t vptrs =
+          __riscv_vlseg2e64_v_u64m${PTR_LMUL}x2((const uint64_t*)i, vl);
 
-      vuint64m${LMUL* 2}_t vti_addr =
-          __riscv_vget_v_u64m${LMUL * 2}x2_u64m${LMUL * 2}(vptrs, 0);
-      vuint64m${LMUL* 2}_t vbi_addr =
-          __riscv_vget_v_u64m${LMUL * 2}x2_u64m${LMUL * 2}(vptrs, 1);
+      vuint64m${PTR_LMUL}_t vti_addr =
+          __riscv_vget_v_u64m${PTR_LMUL}x2_u64m${PTR_LMUL}(vptrs, 0);
+      vuint64m${PTR_LMUL}_t vbi_addr =
+          __riscv_vget_v_u64m${PTR_LMUL}x2_u64m${PTR_LMUL}(vptrs, 1);
 
-      vfloat32m${LMUL}x2_t wptrs = __riscv_vlseg2e32_v_f32m${LMUL}x2(w, vl);
-      vfloat32m${LMUL}_t vwh =
-          __riscv_vget_v_f32m${LMUL}x2_f32m${LMUL}(wptrs, 0);
-      vfloat32m${LMUL}_t vwv =
-          __riscv_vget_v_f32m${LMUL}x2_f32m${LMUL}(wptrs, 1);
+      $if PACK:
+        // Each (alphah, alphav) pair occupies 8 contiguous bytes, i.e. one u64
+        // lane: a unit-stride vle64 replaces the element-wise vlseg2e32, and
+        // the halves are split by two narrowing shifts.
+        vuint64m${PTR_LMUL}_t vwpair =
+            __riscv_vle64_v_u64m${PTR_LMUL}((const uint64_t*)w, vl);
+        vfloat32m${LMUL}_t vwh = ${UNPACK("vwpair", 0)};
+        vfloat32m${LMUL}_t vwv = ${UNPACK("vwpair", 1)};
 
-      vfloat32m${LMUL}x2_t vti = __riscv_vluxseg2ei64_v_f32m${LMUL}x2(
-          (const float*)input_offset, vti_addr, vl);
-      vfloat32m${LMUL}_t vtl =
-          __riscv_vget_v_f32m${LMUL}x2_f32m${LMUL}(vti, 0);
-      vfloat32m${LMUL}_t vtr =
-          __riscv_vget_v_f32m${LMUL}x2_f32m${LMUL}(vti, 1);
+        // top_left and top_right are adjacent in memory, so a single 64-bit
+        // gathered lane carries both -- the RVV analogue of NEON's vld1_f32().
+        // Halves the gathered element count versus vluxseg2ei64.
+        vuint64m${PTR_LMUL}_t vtpair = __riscv_vluxei64_v_u64m${PTR_LMUL}(
+            (const uint64_t*)input_offset, vti_addr, vl);
+        vfloat32m${LMUL}_t vtl = ${UNPACK("vtpair", 0)};
+        vfloat32m${LMUL}_t vtr = ${UNPACK("vtpair", 1)};
 
-      vfloat32m${LMUL}x2_t vbi = __riscv_vluxseg2ei64_v_f32m${LMUL}x2(
-          (const float*)input_offset, vbi_addr, vl);
-      vfloat32m${LMUL}_t vbl =
-          __riscv_vget_v_f32m${LMUL}x2_f32m${LMUL}(vbi, 0);
-      vfloat32m${LMUL}_t vbr =
-          __riscv_vget_v_f32m${LMUL}x2_f32m${LMUL}(vbi, 1);
+        vuint64m${PTR_LMUL}_t vbpair = __riscv_vluxei64_v_u64m${PTR_LMUL}(
+            (const uint64_t*)input_offset, vbi_addr, vl);
+        vfloat32m${LMUL}_t vbl = ${UNPACK("vbpair", 0)};
+        vfloat32m${LMUL}_t vbr = ${UNPACK("vbpair", 1)};
+      $else:
+        vfloat32m${LMUL}x2_t wptrs = __riscv_vlseg2e32_v_f32m${LMUL}x2(w, vl);
+        vfloat32m${LMUL}_t vwh =
+            __riscv_vget_v_f32m${LMUL}x2_f32m${LMUL}(wptrs, 0);
+        vfloat32m${LMUL}_t vwv =
+            __riscv_vget_v_f32m${LMUL}x2_f32m${LMUL}(wptrs, 1);
+
+        vfloat32m${LMUL}x2_t vti = __riscv_vluxseg2ei64_v_f32m${LMUL}x2(
+            (const float*)input_offset, vti_addr, vl);
+        vfloat32m${LMUL}_t vtl =
+            __riscv_vget_v_f32m${LMUL}x2_f32m${LMUL}(vti, 0);
+        vfloat32m${LMUL}_t vtr =
+            __riscv_vget_v_f32m${LMUL}x2_f32m${LMUL}(vti, 1);
+
+        vfloat32m${LMUL}x2_t vbi = __riscv_vluxseg2ei64_v_f32m${LMUL}x2(
+            (const float*)input_offset, vbi_addr, vl);
+        vfloat32m${LMUL}_t vbl =
+            __riscv_vget_v_f32m${LMUL}x2_f32m${LMUL}(vbi, 0);
+        vfloat32m${LMUL}_t vbr =
+            __riscv_vget_v_f32m${LMUL}x2_f32m${LMUL}(vbi, 1);
 
       vfloat32m${LMUL}_t vt = __riscv_vfmacc_vv_f32m${LMUL}(
           vtl, __riscv_vfsub_vv_f32m${LMUL}(vtr, vtl, vl), vwh, vl);
