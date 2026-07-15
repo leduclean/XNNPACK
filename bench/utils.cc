@@ -23,6 +23,10 @@
 #endif
 #ifdef __linux__
 #include <sched.h>
+#include <linux/perf_event.h>
+#include <sys/ioctl.h>
+#include <sys/syscall.h>
+#include <unistd.h>
 #else
 #include <thread>  // NOLINT(build/c++11)
 #endif
@@ -405,6 +409,98 @@ size_t GetMaxCacheSize() {
   }
 #endif  // XNN_ENABLE_CPUINFO
   return max_cache_size;
+}
+
+#ifdef __linux__
+namespace {
+
+struct PerfEventSpec {
+  const char* name;
+  uint32_t type;
+  uint64_t config;
+};
+
+constexpr uint64_t HwCacheConfig(uint64_t id, uint64_t op, uint64_t result) {
+  return id | (op << 8) | (result << 16);
+}
+
+constexpr PerfEventSpec kPerfEvents[] = {
+    {"cycles", PERF_TYPE_HARDWARE, PERF_COUNT_HW_CPU_CYCLES},
+    {"instructions", PERF_TYPE_HARDWARE, PERF_COUNT_HW_INSTRUCTIONS},
+    {"l1d-loads", PERF_TYPE_HW_CACHE,
+     HwCacheConfig(PERF_COUNT_HW_CACHE_L1D, PERF_COUNT_HW_CACHE_OP_READ,
+                   PERF_COUNT_HW_CACHE_RESULT_ACCESS)},
+    {"l1d-misses", PERF_TYPE_HW_CACHE,
+     HwCacheConfig(PERF_COUNT_HW_CACHE_L1D, PERF_COUNT_HW_CACHE_OP_READ,
+                   PERF_COUNT_HW_CACHE_RESULT_MISS)},
+};
+
+int OpenPerfEvent(uint32_t type, uint64_t config) {
+  perf_event_attr attr = {};
+  attr.type = type;
+  attr.size = sizeof(attr);
+  attr.config = config;
+  attr.disabled = 1;
+  // User-mode only: keeps the counts comparable with gem5's SE mode, and works
+  // without lowering perf_event_paranoid.
+  attr.exclude_kernel = 1;
+  attr.exclude_hv = 1;
+  return syscall(__NR_perf_event_open, &attr, /*pid=*/0, /*cpu=*/-1,
+                 /*group_fd=*/-1, /*flags=*/0);
+}
+
+}  // namespace
+#endif  // __linux__
+
+PerfCounters::PerfCounters() {
+#ifdef __linux__
+  if (getenv("XNN_BENCH_PERF") == nullptr) {
+    return;
+  }
+  for (const PerfEventSpec& spec : kPerfEvents) {
+    const int fd = OpenPerfEvent(spec.type, spec.config);
+    if (fd != -1) {
+      counters_.emplace_back(spec.name, fd);
+    }
+  }
+#endif  // __linux__
+}
+
+PerfCounters::~PerfCounters() {
+#ifdef __linux__
+  for (const auto& counter : counters_) {
+    close(counter.second);
+  }
+#endif  // __linux__
+}
+
+void PerfCounters::Start() {
+#ifdef __linux__
+  for (const auto& counter : counters_) {
+    ioctl(counter.second, PERF_EVENT_IOC_RESET, 0);
+    ioctl(counter.second, PERF_EVENT_IOC_ENABLE, 0);
+  }
+#endif  // __linux__
+}
+
+void PerfCounters::Stop() {
+#ifdef __linux__
+  for (const auto& counter : counters_) {
+    ioctl(counter.second, PERF_EVENT_IOC_DISABLE, 0);
+  }
+#endif  // __linux__
+}
+
+void PerfCounters::Report(benchmark::State& state) {
+#ifdef __linux__
+  for (const auto& counter : counters_) {
+    uint64_t value = 0;
+    if (read(counter.second, &value, sizeof(value)) == sizeof(value)) {
+      state.counters[counter.first] = benchmark::Counter(
+          static_cast<double>(value), benchmark::Counter::kAvgIterations);
+    }
+  }
+#endif  // __linux__
 }
 
 bool CheckArchFlags(benchmark::State& state, uint64_t arch_flags) {

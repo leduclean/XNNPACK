@@ -52,11 +52,15 @@ static void f32_ibilinear_chw(benchmark::State& state,
   }
   std::shuffle(indirection.begin(), indirection.end(), rng);
 
+  benchmark::utils::PerfCounters perf;
+  perf.Start();
   for (auto _ : state) {
     ibilinear(output_pixels, channels, indirection.data(), /*input_offset=*/0,
               packed_weights.data(), output.data(),
               input_stride * sizeof(float));
   }
+  perf.Stop();
+  perf.Report(state);
 
   const uint64_t cpu_frequency = benchmark::utils::GetCurrentCpuFrequency();
   if (cpu_frequency != 0) {

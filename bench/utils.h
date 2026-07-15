@@ -11,6 +11,8 @@
 #include <cstdint>
 #include <functional>
 #include <string>
+#include <utility>
+#include <vector>
 
 #include "include/experimental.h"
 #include "src/xnnpack/common.h"
@@ -75,6 +77,35 @@ void ApplyDeferredArgs();
 
 uint32_t WipeCache();
 uint32_t PrefetchToL1(const void* ptr, size_t size);
+
+// Counts CPU hardware events around the benchmark's hot loop and reports them
+// as per-iteration counters, alongside the benchmark's own counters.
+//
+// Only active on Linux, when the XNN_BENCH_PERF environment variable is set,
+// and only for the events the running kernel's PMU driver actually implements;
+// everything else degrades to reporting nothing. Events are counted in
+// user mode only, on the calling thread.
+//
+//   PerfCounters perf;
+//   perf.Start();
+//   for (auto _ : state) { ukernel(...); }
+//   perf.Stop();
+//   perf.Report(state);
+class PerfCounters {
+ public:
+  PerfCounters();
+  ~PerfCounters();
+  PerfCounters(const PerfCounters&) = delete;
+  PerfCounters& operator=(const PerfCounters&) = delete;
+
+  void Start();
+  void Stop();
+  void Report(benchmark::State& state);
+
+ private:
+  // Event name -> perf_event_open file descriptor.
+  std::vector<std::pair<const char*, int>> counters_;
+};
 
 // Clear the L2 cache in each thread of the given `threadpool`, calls
 // `state.PauseTiming()` while doing so.
