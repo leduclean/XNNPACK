@@ -30,7 +30,7 @@ static void f32_ibilinear_chw(benchmark::State& state,
   const size_t channels = state.range(0);
   const size_t output_pixels = state.range(1);
   // Per-channel input stride, matching the microkernel tester's default.
-  const size_t input_stride = 4 * output_pixels;
+  const size_t input_stride = 4 * output_pixels + 16;
 
   xnnpack::ReplicableRandomDevice rng;
   std::uniform_real_distribution<float> f32dist;
@@ -50,7 +50,6 @@ static void f32_ibilinear_chw(benchmark::State& state,
   for (size_t i = 0; i < indirection.size(); i++) {
     indirection[i] = input.data() + 2 * i;
   }
-  std::shuffle(indirection.begin(), indirection.end(), rng);
 
   benchmark::utils::PerfCounters perf;
   perf.Start();
@@ -76,9 +75,12 @@ static void f32_ibilinear_chw(benchmark::State& state,
 // A few CHW image-upsampling shapes: {channels, output_pixels}.
 static void BilinearArguments(benchmark::Benchmark* b) {
   b->ArgNames({"channels", "pixels"});
-  b->Args({16, 64 * 64});
+  b->Args({16, 4096});  // plan ~16 KB = multiple de 8 KB -> aliase
+  b->Args({16, 4000});  // plan ~15.6 KB -> n'aliase plus->Args({32, 32 * 32});
+  b->Args({4, 32 * 32});
+  b->Args({8, 32 * 32});
+  b->Args({16, 32 * 32});
   b->Args({32, 32 * 32});
-  b->Args({64, 16 * 16});
 }
 
 #define BENCHMARK_IBILINEAR_CHW(ukernel, arch_flags)                 \
@@ -88,11 +90,9 @@ static void BilinearArguments(benchmark::Benchmark* b) {
 
 BENCHMARK_IBILINEAR_CHW(xnn_f32_ibilinear_chw_ukernel__scalar_p2, 0);
 #if XNN_ARCH_RISCV
-BENCHMARK_IBILINEAR_CHW(xnn_f32_ibilinear_chw_ukernel__rvv_u1v,
+BENCHMARK_IBILINEAR_CHW(xnn_f32_ibilinear_chw_ukernel__rvv_u2v_dev,
                         xnn_arch_riscv_vector);
-BENCHMARK_IBILINEAR_CHW(xnn_f32_ibilinear_chw_ukernel__rvv_u2v,
-                        xnn_arch_riscv_vector);
-BENCHMARK_IBILINEAR_CHW(xnn_f32_ibilinear_chw_ukernel__rvv_u2v_off,
+BENCHMARK_IBILINEAR_CHW(xnn_f32_ibilinear_chw_ukernel__rvv_u2v_inv,
                         xnn_arch_riscv_vector);
 #endif  // XNN_ARCH_RISCV
 

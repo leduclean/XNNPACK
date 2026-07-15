@@ -170,6 +170,7 @@ SET(NON_PROD_RVV_MICROKERNEL_SRCS
   src/f32-gemm/gen/f32-gemm-7x4v-rvv.c
   src/f32-ibilinear-chw/gen/f32-ibilinear-chw-rvv-stride-u2v.c
   src/f32-ibilinear-chw/gen/f32-ibilinear-chw-rvv-u1v.c
+  src/f32-ibilinear-chw/gen/f32-ibilinear-chw-rvv-u2v-dev.c
   src/f32-ibilinear-chw/gen/f32-ibilinear-chw-rvv-u2v-inv.c
   src/f32-ibilinear-chw/gen/f32-ibilinear-chw-rvv-u2v-off.c
   src/f32-ibilinear/gen/f32-ibilinear-rvv-u1v.c

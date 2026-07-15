@@ -23,23 +23,31 @@ void xnn_f32_ibilinear_chw_ukernel__rvv_u2v_inv(
     vuint64m4_t vti_addr = __riscv_vget_v_u64m4x2_u64m4(vptrs, 0);
     vuint64m4_t vbi_addr = __riscv_vget_v_u64m4x2_u64m4(vptrs, 1);
 
-    vfloat32m2x2_t wptrs = __riscv_vlseg2e32_v_f32m2x2(w, vl);
-    vfloat32m2_t vwh = __riscv_vget_v_f32m2x2_f32m2(wptrs, 0);
-    vfloat32m2_t vwv = __riscv_vget_v_f32m2x2_f32m2(wptrs, 1);
+    vuint64m4_t wpair = __riscv_vle64_v_u64m4((const uint64_t*)w, vl);
+    vfloat32m2_t vwh =
+        __riscv_vreinterpret_v_u32m2_f32m2(__riscv_vnsrl(wpair, 0, vl));
+    vfloat32m2_t vwv =
+        __riscv_vreinterpret_v_u32m2_f32m2(__riscv_vnsrl(wpair, 32, vl));
 
     size_t c = channels;
     size_t channel_offset = input_offset;
     float* o = output;
-    do {
-      vfloat32m2x2_t vti = __riscv_vluxseg2ei64_v_f32m2x2(
-          (const float*)channel_offset, vti_addr, vl);
-      vfloat32m2_t vtl = __riscv_vget_v_f32m2x2_f32m2(vti, 0);
-      vfloat32m2_t vtr = __riscv_vget_v_f32m2x2_f32m2(vti, 1);
 
-      vfloat32m2x2_t vbi = __riscv_vluxseg2ei64_v_f32m2x2(
-          (const float*)channel_offset, vbi_addr, vl);
-      vfloat32m2_t vbl = __riscv_vget_v_f32m2x2_f32m2(vbi, 0);
-      vfloat32m2_t vbr = __riscv_vget_v_f32m2x2_f32m2(vbi, 1);
+    do {
+      vuint64m4_t vtpair = __riscv_vluxei64_v_u64m4(
+          (const uint64_t*)channel_offset, vti_addr, vl);
+      vuint64m4_t vbpair = __riscv_vluxei64_v_u64m4(
+          (const uint64_t*)channel_offset, vbi_addr, vl);
+
+      vfloat32m2_t vtl =
+          __riscv_vreinterpret_v_u32m2_f32m2(__riscv_vnsrl(vtpair, 0, vl));
+      vfloat32m2_t vtr =
+          __riscv_vreinterpret_v_u32m2_f32m2(__riscv_vnsrl(vtpair, 32, vl));
+
+      vfloat32m2_t vbl =
+          __riscv_vreinterpret_v_u32m2_f32m2(__riscv_vnsrl(vbpair, 0, vl));
+      vfloat32m2_t vbr =
+          __riscv_vreinterpret_v_u32m2_f32m2(__riscv_vnsrl(vbpair, 32, vl));
 
       vfloat32m2_t vt = __riscv_vfmacc_vv_f32m2(
           vtl, __riscv_vfsub_vv_f32m2(vtr, vtl, vl), vwh, vl);

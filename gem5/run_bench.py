@@ -5,8 +5,7 @@ import pandas as pd
 
 GEM5 = "./gem5.fast"
 CONFIG = "config_ibilinear.py"
-# KERNELS = ["scalar", "u1v", "u2v", "stride"]
-KERNELS = ["scalar", "u2v", "u2v_inv", "u2v_offc"]
+KERNELS = ["scalar", "u1v", "u2v", "stride"]
 ITERS = 20  # should match iter in bench_ibilinear_gem5
 BASELINE = "scalar"
 

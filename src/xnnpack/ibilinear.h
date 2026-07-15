@@ -162,6 +162,9 @@ DECLARE_F32_IBILINEAR_CHW_UKERNEL_FUNCTION(
     xnn_f32_ibilinear_chw_ukernel__rvv_u2v)
 
 DECLARE_F32_IBILINEAR_CHW_UKERNEL_FUNCTION(
+    xnn_f32_ibilinear_chw_ukernel__rvv_u2v_dev)
+
+DECLARE_F32_IBILINEAR_CHW_UKERNEL_FUNCTION(
     xnn_f32_ibilinear_chw_ukernel__rvv_u2v_inv)
 
 DECLARE_F32_IBILINEAR_CHW_UKERNEL_FUNCTION(

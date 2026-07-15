@@ -26,10 +26,6 @@ void xnn_f32_ibilinear_chw_ukernel__rvv_u2v_off(size_t, size_t, const float**,
                                                 size_t, const float*, float*,
                                                 size_t);
 
-void xnn_f32_ibilinear_chw_ukernel__rvv_u2v_offc(size_t, size_t, const float**,
-                                                 size_t, const float*, float*,
-                                                 size_t);
-
 void xnn_f32_ibilinear_chw_ukernel__rvv_u2v_inv(size_t, size_t, const float**,
                                                 size_t, const float*, float*,
                                                 size_t);
@@ -37,14 +33,13 @@ void xnn_f32_ibilinear_chw_ukernel__rvv_u2v_inv(size_t, size_t, const float**,
 
 int main(int argc, char** argv) {
   std::string k = argc > 1 ? argv[1] : "u2v";
-  ukernel_fn fn =
-      k == "scalar"     ? xnn_f32_ibilinear_chw_ukernel__scalar_p2
-      : k == "u1v"      ? xnn_f32_ibilinear_chw_ukernel__rvv_u1v
-      : k == "stride"   ? xnn_f32_ibilinear_chw_ukernel__rvv_stride_u2v
-      : k == "u2v_off"  ? xnn_f32_ibilinear_chw_ukernel__rvv_u2v_off
-      : k == "u2v_inv"  ? xnn_f32_ibilinear_chw_ukernel__rvv_u2v_inv
-      : k == "u2v_offc" ? xnn_f32_ibilinear_chw_ukernel__rvv_u2v_offc
-                        : xnn_f32_ibilinear_chw_ukernel__rvv_u2v;
+  ukernel_fn fn = k == "scalar" ? xnn_f32_ibilinear_chw_ukernel__scalar_p2
+                  : k == "u1v"  ? xnn_f32_ibilinear_chw_ukernel__rvv_u1v
+                  : k == "stride"
+                      ? xnn_f32_ibilinear_chw_ukernel__rvv_stride_u2v
+                  : k == "u2v_off" ? xnn_f32_ibilinear_chw_ukernel__rvv_u2v_off
+                  : k == "u2v_inv" ? xnn_f32_ibilinear_chw_ukernel__rvv_u2v_inv
+                                   : xnn_f32_ibilinear_chw_ukernel__rvv_u2v;
 
   const size_t channels = 32, output_pixels = 32 * 32;
   const size_t input_stride = 4 * output_pixels;
